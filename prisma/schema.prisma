@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String         @id @default(uuid())
+  username        String         @unique @db.VarChar(30)
+  email           String         @unique
+  passwordHash    String
+  displayName     String?
+  bio             String?
+  avatarUrl       String?
+  gender          Gender?
+  isEmailVerified Boolean        @default(false)
+  status          UserStatus     @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  comments        Comment[]
+  memberships     Membership[]
+  notifications   Notification[]
+  posts           Post[]
+  refreshTokens   RefreshToken[]
+  reports         Report[]
+  createdSubs     Subreddit[]
+  votes           Vote[]
+  watchHistory    WatchHistory[]
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  deviceName String?
+  userAgent  String?
+  ipAddress  String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Subreddit {
+  id          String       @id @default(uuid())
+  name        String       @unique @db.VarChar(21)
+  title       String       @db.VarChar(100)
+  description String?
+  rules       String?
+  bannerUrl   String?
+  creatorId   String
+  memberCount Int          @default(0)
+  isNsfw      Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships Membership[]
+  posts       Post[]
+  creator     User         @relation(fields: [creatorId], references: [id])
+
+  @@index([creatorId])
+}
+
+model Membership {
+  userId      String
+  subredditId String
+  role        MembershipRole @default(MEMBER)
+  joinedAt    DateTime       @default(now())
+  subreddit   Subreddit      @relation(fields: [subredditId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, subredditId])
+}
+
+model Post {
+  id           String         @id @default(uuid())
+  subredditId  String
+  authorId     String
+  title        String         @db.VarChar(300)
+  body         String?
+  postType     PostType       @default(TEXT)
+  imageUrl     String?
+  linkUrl      String?
+  score        Int            @default(0)
+  commentCount Int            @default(0)
+  isLocked     Boolean        @default(false)
+  isPinned     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
+  comments     Comment[]
+  author       User           @relation(fields: [authorId], references: [id])
+  subreddit    Subreddit      @relation(fields: [subredditId], references: [id])
+  reports      Report[]
+  votes        Vote[]
+  watchHistory WatchHistory[]
+
+  @@index([subredditId, createdAt])
+  @@index([authorId])
+}
+
+model Comment {
+  id              String    @id @default(uuid())
+  postId          String
+  authorId        String
+  parentCommentId String?
+  body            String
+  path            String
+  depth           Int       @default(0)
+  score           Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  author          User      @relation(fields: [authorId], references: [id])
+  parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies         Comment[] @relation("CommentReplies")
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reports         Report[]
+  votes           Vote[]
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String?
+  commentId String?
+  voteType  VoteType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@index([postId])
+  @@index([commentId])
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String
+  postId      String?
+  commentId   String?
+  reason      String
+  description String?
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  comment     Comment?     @relation(fields: [commentId], references: [id])
+  post        Post?        @relation(fields: [postId], references: [id])
+  reporter    User         @relation(fields: [reporterId], references: [id])
+
+  @@index([reporterId])
+  @@index([postId])
+  @@index([commentId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+model WatchHistory {
+  userId   String
+  postId   String
+  viewedAt DateTime @default(now())
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum MembershipRole {
+  MEMBER
+  MODERATOR
+}
+
+enum PostType {
+  TEXT
+  IMAGE
+  LINK
+}
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+enum NotificationType {
+  COMMENT
+  REPLY
+  UPVOTE
+  FOLLOW
+  MODERATION
+}
