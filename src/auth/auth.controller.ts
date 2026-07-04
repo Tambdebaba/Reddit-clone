@@ -1,59 +1,42 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
-import { UseGuards, Request, Get } from '@nestjs/common';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
-@Controller('auth') 
+
+@Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-  ) {}
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  getProfile(@Request() req) {
-    return req.user;
-  }
+  constructor(private readonly authService: AuthService) {}
+
   @Post('register')
-  register(
-    @Body() registerDto: RegisterDto,
-  ) {
-    return this.authService.register(
-      registerDto,
-    );
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
+
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
+
   @Post('refresh')
-    refresh(
-    @Body() refreshTokenDto: RefreshTokenDto,
-    ) {
-      return this.authService.refresh(
-      refreshTokenDto,
-    );
+  @HttpCode(HttpStatus.OK)
+  refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refresh(refreshTokenDto);
   }
+
   @Post('logout')
-  logout(
-    @Body() refreshTokenDto: RefreshTokenDto,
-  ){
-      
-    return this.authService.logout(
-      refreshTokenDto,
-    );
-  };
+  @HttpCode(HttpStatus.OK)
+  logout(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.logout(refreshTokenDto);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(
-  @CurrentUser() user: {
-    sub: string;
-    email: string;
-  },
-  ) {
-  return this.authService.me(user.sub);
+  getProfile(@CurrentUser() user: { sub: string; email: string }) {
+    // Return sanitized data using a single database query
+    return this.authService.me(user.sub);
   }
- 
 }

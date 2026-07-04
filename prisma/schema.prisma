@@ -4,38 +4,41 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                String         @id @default(uuid())
-  username          String         @unique @db.VarChar(30)
-  email             String         @unique
-  passwordHash      String
-  displayName       String?
-  bio               String?
-  avatarUrl         String?
-  gender            Gender?
-  isEmailVerified   Boolean        @default(false)
-  status            UserStatus     @default(ACTIVE)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  deletedAt         DateTime?
-  comments          Comment[]
-  memberships       Membership[]
-  sentNotifications Notification[] @relation("NotificationActor")
-  notifications     Notification[] @relation("NotificationRecipient")
-  posts             Post[]
-  refreshTokens     RefreshToken[]
+  id                 String         @id @default(uuid(7))
+  username           String         @unique @db.VarChar(30)
+  email              String         @unique
+  passwordHash       String
+  displayName        String?        @db.VarChar(50)
+  bio                String?        @db.VarChar(160)
+  avatarUrl          String?
+  gender             Gender?
+  isEmailVerified    Boolean        @default(false)
+  status             UserStatus     @default(ACTIVE)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  deletedAt          DateTime?
   
-  createdSubs       Subreddit[]
-  votes             Vote[]
-  watchHistory      WatchHistory[]
-  reports           Report[]       @relation("ReportReporter")
-  reportedReports   Report[]       @relation("ReportedUser")
+  comments           Comment[]
+  memberships        Membership[]
+  sentNotifications  Notification[] @relation("NotificationActor")
+  notifications      Notification[] @relation("NotificationRecipient")
+  posts              Post[]
+  refreshTokens      RefreshToken[]
+  createdSubs        Subreddit[]
+  votes              Vote[]
+  watchHistory       WatchHistory[]
+  reports            Report[]       @relation("ReportReporter")
+  reportedReports    Report[]       @relation("ReportedUser")
+
+  @@index([createdAt])
 }
 
 model RefreshToken {
-  id         String    @id @default(uuid())
+  id         String    @id @default(uuid(7))
   userId     String
   tokenHash  String    @unique
   expiresAt  DateTime
@@ -51,10 +54,10 @@ model RefreshToken {
 }
 
 model Subreddit {
-  id          String       @id @default(uuid())
+  id          String       @id @default(uuid(7))
   name        String       @unique @db.VarChar(21)
   title       String       @db.VarChar(100)
-  description String?
+  description String?      @db.VarChar(500)
   rules       String?
   bannerUrl   String?
   creatorId   String
@@ -62,6 +65,7 @@ model Subreddit {
   isNsfw      Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  
   memberships Membership[]
   posts       Post[]
   creator     User         @relation(fields: [creatorId], references: [id])
@@ -78,10 +82,11 @@ model Membership {
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, subredditId])
+  @@index([subredditId])
 }
 
 model Post {
-  id            String         @id @default(uuid())
+  id            String         @id @default(uuid(7))
   subredditId   String
   authorId      String
   title         String         @db.VarChar(300)
@@ -96,6 +101,7 @@ model Post {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   deletedAt     DateTime?
+  
   comments      Comment[]
   notifications Notification[]
   author        User           @relation(fields: [authorId], references: [id])
@@ -104,12 +110,12 @@ model Post {
   votes         Vote[]
   watchHistory  WatchHistory[]
 
-  @@index([subredditId, createdAt])
+  @@index([subredditId, createdAt(sort: Desc)])
   @@index([authorId])
 }
 
 model Comment {
-  id            String         @id @default(uuid())
+  id            String         @id @default(uuid(7))
   body          String
   postId        String
   authorId      String
@@ -118,6 +124,7 @@ model Comment {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   deletedAt     DateTime?
+  
   author        User           @relation(fields: [authorId], references: [id])
   parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
   replies       Comment[]      @relation("CommentReplies")
@@ -126,19 +133,20 @@ model Comment {
   reports       Report[]
   votes         Vote[]
 
-  @@index([postId])
+  @@index([postId, createdAt])
   @@index([parentId])
   @@index([authorId])
 }
 
 model Vote {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid(7))
   userId    String
   postId    String?
   commentId String?
   voteType  VoteType
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
   comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
   post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -150,30 +158,20 @@ model Vote {
 }
 
 model Report {
-  id           String       @id @default(uuid())
-
-  reporterId   String
-
+  id             String       @id @default(uuid(7))
+  reporterId     String
   reportedUserId String?
-
-  postId       String?
-  commentId    String?
-
-  reason       ReportReason
-
-  description  String?
-
-  status       ReportStatus @default(PENDING)
-
-  createdAt    DateTime     @default(now())
-
-  reporter      User @relation("ReportReporter", fields: [reporterId], references: [id])
-
-  reportedUser  User? @relation("ReportedUser", fields: [reportedUserId], references: [id])
-
-  post          Post? @relation(fields: [postId], references: [id])
-
-  comment       Comment? @relation(fields: [commentId], references: [id])
+  postId         String?
+  commentId      String?
+  reason         ReportReason
+  description    String?      @db.VarChar(500)
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  
+  reporter       User         @relation("ReportReporter", fields: [reporterId], references: [id])
+  reportedUser   User?        @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  post           Post?        @relation(fields: [postId], references: [id])
+  comment        Comment?     @relation(fields: [commentId], references: [id])
 
   @@index([reporterId])
   @@index([reportedUserId])
@@ -182,22 +180,23 @@ model Report {
 }
 
 model Notification {
-  id          String           @id @default(uuid())
+  id          String           @id @default(uuid(7))
   recipientId String
   actorId     String?
   postId      String?
   commentId   String?
   type        NotificationType
-  title       String
-  message     String?
+  title       String           @db.VarChar(100)
+  message     String?          @db.VarChar(255)
   isRead      Boolean          @default(false)
   createdAt   DateTime         @default(now())
+  
   actor       User?            @relation("NotificationActor", fields: [actorId], references: [id])
   comment     Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
   post        Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
   recipient   User             @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
-  @@index([recipientId, isRead])
+  @@index([recipientId, isRead, createdAt(sort: Desc)])
   @@index([postId])
   @@index([commentId])
 }
@@ -206,10 +205,12 @@ model WatchHistory {
   userId   String
   postId   String
   viewedAt DateTime @default(now())
+  
   post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
+  @@index([postId])
 }
 
 enum Gender {

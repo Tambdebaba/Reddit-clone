@@ -1,67 +1,40 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterDto } from '../auth/dto/register.dto';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import  type { JwtPayload } from 'src/auth/interfaces/jwt-payload.interface';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ListUserContentDto } from './dto/list-user-content.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Get(':username')
+  findProfile(@Param('username') username: string) {
+    return this.usersService.findProfile(username);
   }
 
-  @Post()
-  create(@Body() registerDto: RegisterDto) {
-    return this.usersService.create(registerDto);
-  }
   @Get('me')
-  getMe(
-    @CurrentUser() user: JwtPayload,
-  ) {
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser() user: JwtPayload) {
     return this.usersService.findMe(user.sub);
   }
 
   @Patch('me')
-  updateProfile(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: UpdateProfileDto,
-  ) {
-    return this.usersService.updateProfile(
-      user.sub,
-      dto,
-    );
+  @UseGuards(JwtAuthGuard)
+  updateProfile(@CurrentUser() user: JwtPayload, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(user.sub, dto);
   }
-  @Get(':username')
-  findProfile(
-    @Param('username') username: string,
-  ) {
-    return this.usersService.findProfile(
-      username,
-    );
-  }
+
   @Get(':username/posts')
-  findPosts(
-    @Param('username') username: string,
-    @Query() query: ListUserContentDto,
-  ) {
-    return this.usersService.findUserPosts(
-      username,
-      query,
-    );
+  findPosts(@Param('username') username: string, @Query() query: ListUserContentDto) {
+    return this.usersService.findUserPosts(username, query);
   }
-  
+
   @Get(':username/comments')
-  findComments(
-    @Param('username') username: string,
-    @Query() query: ListUserContentDto,
-  ) {
-    return this.usersService.findUserComments(
-      username,
-      query,
-    );
+  findComments(@Param('username') username: string, @Query() query: ListUserContentDto) {
+    return this.usersService.findUserComments(username, query);
   }
 }

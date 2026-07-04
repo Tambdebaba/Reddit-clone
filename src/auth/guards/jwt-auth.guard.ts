@@ -1,27 +1,13 @@
-import {
-    ExecutionContext,
-    Injectable,
-    UnauthorizedException,
-  } from '@nestjs/common';
-  import { AuthGuard } from '@nestjs/passport';
-  
-  @Injectable()
-  export class JwtAuthGuard extends AuthGuard('jwt') {
-    canActivate(context: ExecutionContext) {
-      console.log('JwtAuthGuard canActivate called');
-      return super.canActivate(context);
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  // Overriding handleRequest solely to preserve explicit exception passing without standard guard overhead
+  override handleRequest<TUser = any>(err: any, user: any, info: any): TUser {
+    if (err || !user) {
+      throw err || new UnauthorizedException(info?.message || 'Unauthorized');
     }
-  
-    handleRequest(err: any, user: any, info: any) {
-      console.log('===== Passport Result =====');
-      console.log('Error:', err);
-      console.log('User:', user);
-      console.log('Info:', info);
-  
-      if (err || !user) {
-        throw err || new UnauthorizedException(info?.message);
-      }
-  
-      return user;
-    }
+    return user;
   }
+}

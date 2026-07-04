@@ -1,0 +1,3059 @@
+========================================
+PROJECT DIRECTORY STRUCTURE
+========================================
+src/
+ ├── app.controller.spec.ts
+ ├── app.controller.ts
+ ├── app.module.ts
+ ├── app.service.ts
+ ├── auth/
+ │   ├── auth.controller.spec.ts
+ │   ├── auth.controller.ts
+ │   ├── auth.module.ts
+ │   ├── auth.service.spec.ts
+ │   ├── auth.service.ts
+ │   ├── decorators/
+ │   │   └── current-user.decorator.ts
+ │   ├── dto/
+ │   │   ├── login.dto.ts
+ │   │   ├── refresh-token.dto.ts
+ │   │   └── register.dto.ts
+ │   ├── guards/
+ │   │   └── jwt-auth.guard.ts
+ │   ├── interfaces/
+ │   │   └── jwt-payload.interface.ts
+ │   └── strategies/
+ │       └── jwt.strategy.ts
+ ├── comment/
+ │   ├── comment.controller.ts
+ │   ├── comment.module.ts
+ │   ├── comment.service.ts
+ │   └── dto/
+ │       ├── create-comment.dto.ts
+ │       ├── list-comments.dto.ts
+ │       ├── update-comment.dto.ts
+ │       └── vote.dto.ts
+ ├── feed/
+ │   ├── dto/
+ │   │   ├── feed-post-response.dto.ts
+ │   │   └── list-feed.dto.ts
+ │   ├── feed.controller.ts
+ │   ├── feed.module.ts
+ │   └── feed.service.ts
+ ├── main.ts
+ ├── notification/
+ │   ├── notification.controller.spec.ts
+ │   ├── notification.controller.ts
+ │   ├── notification.module.ts
+ │   ├── notification.service.spec.ts
+ │   └── notification.service.ts
+ ├── post/
+ │   ├── dto/
+ │   │   ├── create-post.dto.ts
+ │   │   ├── list-posts.dto.ts
+ │   │   └── update-post.dto.ts
+ │   ├── post.controller.spec.ts
+ │   ├── post.controller.ts
+ │   ├── post.module.ts
+ │   ├── post.service.spec.ts
+ │   └── post.service.ts
+ ├── prisma/
+ │   ├── prisma.module.ts
+ │   ├── prisma.service.spec.ts
+ │   └── prisma.service.ts
+ ├── report/
+ │   ├── dto/
+ │   │   └── create-report.dto.ts
+ │   ├── report.controller.spec.ts
+ │   ├── report.controller.ts
+ │   ├── report.module.ts
+ │   ├── report.service.spec.ts
+ │   └── report.service.ts
+ ├── search/
+ │   ├── dto/
+ │   │   └── search.dto.ts
+ │   ├── search.controller.ts
+ │   ├── search.module.ts
+ │   └── search.service.ts
+ ├── subreddit/
+ │   ├── dto/
+ │   │   ├── create-subreddit.dto.ts
+ │   │   ├── list-members.dto.ts
+ │   │   └── list-subreddits.dto.ts
+ │   ├── subreddit.controller.spec.ts
+ │   ├── subreddit.controller.ts
+ │   ├── subreddit.module.ts
+ │   ├── subreddit.service.spec.ts
+ │   └── subreddit.service.ts
+ └── users/
+     ├── dto/
+     │   ├── list-user-content.dto.ts
+     │   ├── update-profile.dto.ts
+     │   └── user-profile-response.dto.ts
+     ├── users.controller.spec.ts
+     ├── users.controller.ts
+     ├── users.module.ts
+     ├── users.service.spec.ts
+     └── users.service.ts
+
+
+========================================
+FILE: src\app.controller.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+describe('AppController', () => {
+  let appController: AppController;
+
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [AppService],
+    }).compile();
+
+    appController = app.get<AppController>(AppController);
+  });
+
+  describe('root', () => {
+    it('should return "Hello World!"', () => {
+      expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+});
+
+```
+
+
+========================================
+FILE: src\app.controller.ts
+========================================
+```ts
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello() {
+    return this.appService.getHello();
+  }
+}
+```
+
+
+========================================
+FILE: src\app.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { SubredditModule } from './subreddit/subreddit.module';
+import { PostModule } from './post/post.module';
+import { CommentModule } from './comment/comment.module';
+import { FeedModule } from './feed/feed.module';
+import { SearchModule } from './search/search.module';
+import { NotificationModule } from './notification/notification.module';
+import { ReportModule } from './report/report.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    SubredditModule,
+    PostModule,
+    CommentModule,
+    FeedModule,
+    SearchModule,
+    NotificationModule,
+    ReportModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+
+========================================
+FILE: src\app.service.ts
+========================================
+```ts
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getHello() {
+    return 'Hello World!';
+  }
+}
+```
+
+
+========================================
+FILE: src\auth\auth.controller.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthController } from './auth.controller';
+
+describe('AuthController', () => {
+  let controller: AuthController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [AuthController],
+    }).compile();
+
+    controller = module.get<AuthController>(AuthController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\auth\auth.controller.ts
+========================================
+```ts
+import { Body, Controller, Post, UseGuards, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { LoginDto } from './dto/login.dto';
+import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CurrentUser } from './decorators/current-user.decorator';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('register')
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refresh(refreshTokenDto);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.logout(refreshTokenDto);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getProfile(@CurrentUser() user: { sub: string; email: string }) {
+    // Return sanitized data using a single database query
+    return this.authService.me(user.sub);
+  }
+}
+```
+
+
+========================================
+FILE: src\auth\auth.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { PrismaModule } from '../prisma/prisma.module';
+
+@Module({
+  imports: [
+    PrismaModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '15m' },
+      }),
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy],
+  exports: [JwtModule, PassportModule],
+})
+export class AuthModule {}
+```
+
+
+========================================
+FILE: src\auth\auth.service.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthService } from './auth.service';
+
+describe('AuthService', () => {
+  let service: AuthService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [AuthService],
+    }).compile();
+
+    service = module.get<AuthService>(AuthService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\auth\auth.service.ts
+========================================
+```ts
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { JwtService } from '@nestjs/jwt';
+import { Prisma, VoteType, NotificationType } from '@prisma/client';
+import { randomBytes, createHash } from 'crypto';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  async register(registerDto: RegisterDto) {
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    try {
+      // Let DB handle automatic UUID defaults to avoid runtime crypto initialization blockers
+      return await this.prisma.user.create({
+        data: {
+          username: registerDto.username,
+          email: registerDto.email,
+          passwordHash: hashedPassword,
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('Email or username already exists');
+      }
+      throw error;
+    }
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: loginDto.email } });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
+    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.generateAccessToken(user.id, user.email),
+      this.generateRefreshToken(user.id),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  async refresh(refreshTokenDto: RefreshTokenDto) {
+    const tokenHash = createHash('sha256').update(refreshTokenDto.refreshToken).digest('hex');
+
+    try {
+      // Deleting directly skips a redundant select/query roundtrip entirely.
+      const session = await this.prisma.refreshToken.delete({
+        where: { tokenHash },
+        include: { user: { select: { id: true, email: true } } },
+      });
+
+      if (session.expiresAt < new Date()) {
+        throw new UnauthorizedException('Refresh token expired');
+      }
+
+      const [accessToken, newRefreshToken] = await Promise.all([
+        this.generateAccessToken(session.user.id, session.user.email),
+        this.generateRefreshToken(session.user.id),
+      ]);
+
+      return { accessToken, refreshToken: newRefreshToken };
+    } catch (error) {
+      // P2025 is Prisma's error code for "Record to delete does not exist"
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+      throw error;
+    }
+  }
+
+  async logout(refreshTokenDto: RefreshTokenDto) {
+    const tokenHash = createHash('sha256').update(refreshTokenDto.refreshToken).digest('hex');
+
+    try {
+      await this.prisma.refreshToken.delete({ where: { tokenHash } });
+    } catch {
+      // Silently consume missing records during logout requests to maximize idempotency
+    }
+
+    return { message: 'Logged out successfully' };
+  }
+
+  async me(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+        createdAt: true,
+        isEmailVerified: true,
+      },
+    });
+
+    if (!user) throw new UnauthorizedException();
+    return user;
+  }
+
+  private generateAccessToken(userId: string, email: string) {
+    return this.jwtService.signAsync({ sub: userId, email });
+  }
+
+  private async generateRefreshToken(userId: string) {
+    const refreshToken = randomBytes(64).toString('hex');
+    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        tokenHash,
+        expiresAt: new Date(Date.now() + 2592000000), // Clean integer representation of 30 days
+      },
+    });
+
+    return refreshToken;
+  }
+}
+```
+
+
+========================================
+FILE: src\auth\decorators\current-user.decorator.ts
+========================================
+```ts
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+export const CurrentUser = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext) => ctx.switchToHttp().getRequest().user,
+);
+```
+
+
+========================================
+FILE: src\auth\dto\login.dto.ts
+========================================
+```ts
+import { IsEmail, IsString, MinLength } from 'class-validator';
+
+export class LoginDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  password!: string;
+}
+```
+
+
+========================================
+FILE: src\auth\dto\refresh-token.dto.ts
+========================================
+```ts
+import { IsString } from 'class-validator';
+
+export class RefreshTokenDto {
+  @IsString()
+  refreshToken!: string;
+}
+```
+
+
+========================================
+FILE: src\auth\dto\register.dto.ts
+========================================
+```ts
+import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+
+export class RegisterDto {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  username!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  password!: string;
+}
+```
+
+
+========================================
+FILE: src\auth\guards\jwt-auth.guard.ts
+========================================
+```ts
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  // Overriding handleRequest solely to preserve explicit exception passing without standard guard overhead
+  override handleRequest<TUser = any>(err: any, user: any, info: any): TUser {
+    if (err || !user) {
+      throw err || new UnauthorizedException(info?.message || 'Unauthorized');
+    }
+    return user;
+  }
+}
+```
+
+
+========================================
+FILE: src\auth\interfaces\jwt-payload.interface.ts
+========================================
+```ts
+export interface JwtPayload {
+    sub: string;
+    email: string;
+  }
+```
+
+
+========================================
+FILE: src\auth\strategies\jwt.strategy.ts
+========================================
+```ts
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(private readonly configService: ConfigService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: configService.get<string>('JWT_SECRET')!,
+    });
+  }
+  async validate(payload: JwtPayload) {
+    return { sub: payload.sub, email: payload.email };
+  }
+}
+```
+
+
+========================================
+FILE: src\comment\comment.controller.ts
+========================================
+```ts
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { CommentService } from './comment.service';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
+import { ListCommentsDto } from './dto/list-comments.dto';
+import { VoteDto } from './dto/vote.dto';
+
+@Controller()
+@UseGuards(JwtAuthGuard)
+export class CommentController {
+  constructor(private readonly commentService: CommentService) {}
+
+  @Post('posts/:id/comments')
+  create(@Param('id') postId: string, @Body() dto: CreateCommentDto, @CurrentUser() user: JwtPayload) {
+    return this.commentService.create(postId, dto, user.sub);
+  }
+
+  @Post('comments/:id/reply')
+  reply(@Param('id') parentCommentId: string, @Body() dto: CreateCommentDto, @CurrentUser() user: JwtPayload) {
+    return this.commentService.reply(parentCommentId, dto, user.sub);
+  }
+
+  @Get('comments/:id')
+  findOne(@Param('id') id: string) {
+    return this.commentService.findOne(id);
+  }
+
+  @Get('posts/:id/comments')
+  findByPost(@Param('id') postId: string, @Query() query: ListCommentsDto) {
+    return this.commentService.findByPost(postId, query);
+  }
+
+  @Patch('comments/:id')
+  update(@Param('id') id: string, @Body() dto: UpdateCommentDto, @CurrentUser() user: JwtPayload) {
+    return this.commentService.update(id, dto, user.sub);
+  }
+
+  @Delete('comments/:id')
+  remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.commentService.remove(id, user.sub);
+  }
+
+  @Post('comments/:id/vote')
+  vote(@Param('id') id: string, @Body() dto: VoteDto, @CurrentUser() user: JwtPayload) {
+    return this.commentService.voteComment(id, dto, user.sub);
+  }
+}
+```
+
+
+========================================
+FILE: src\comment\comment.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { CommentController } from './comment.controller';
+import { CommentService } from './comment.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { NotificationModule } from '../notification/notification.module';
+import { AuthModule } from '../auth/auth.module';
+@Module({
+  imports: [
+    PrismaModule,
+    AuthModule,
+    NotificationModule,
+  ],
+  
+  controllers: [CommentController],
+
+  providers: [CommentService],
+})
+export class CommentModule {}
+```
+
+
+========================================
+FILE: src\comment\comment.service.ts
+========================================
+```ts
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
+import { ListCommentsDto } from './dto/list-comments.dto';
+import { VoteDto } from './dto/vote.dto';
+import { NotificationService } from '../notification/notification.service';
+import { Prisma, NotificationType } from '@prisma/client';
+
+@Injectable()
+export class CommentService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
+
+  private readonly authorSelect = {
+    select: { id: true, username: true, displayName: true, avatarUrl: true },
+  };
+
+  async create(postId: string, dto: CreateCommentDto, userId: string) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // Optimization: Fetch author ID through relations on creation to eliminate a SELECT query
+        const comment = await tx.comment.create({
+          data: { body: dto.body, postId, authorId: userId, parentId: null },
+          include: { author: this.authorSelect, post: { select: { authorId: true } } },
+        });
+
+        await tx.post.update({
+          where: { id: postId },
+          data: { commentCount: { increment: 1 } },
+        });
+
+        // Safe out-of-band execution context minimizes transaction block durations
+        this.notificationService.createNotification({
+          recipientId: comment.post.authorId,
+          actorId: userId,
+          postId,
+          commentId: comment.id,
+          type: NotificationType.COMMENT,
+          title: 'New comment',
+          message: 'Someone commented on your post.',
+        }).catch(() => { /* suppress background exceptions */ });
+
+        const { post, ...sanitizedComment } = comment;
+        return sanitizedComment;
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new NotFoundException('Post not found');
+      }
+      throw error;
+    }
+  }
+
+  async reply(parentCommentId: string, dto: CreateCommentDto, userId: string) {
+    // findUnique handles cached PK operations significantly faster than findFirst
+    const parent = await this.prisma.comment.findUnique({
+      where: { id: parentCommentId },
+      select: { postId: true, authorId: true, deletedAt: true },
+    });
+
+    if (!parent || parent.deletedAt) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const reply = await tx.comment.create({
+        data: { body: dto.body, authorId: userId, postId: parent.postId, parentId: parentCommentId },
+        include: { author: this.authorSelect },
+      });
+
+      await tx.post.update({
+        where: { id: parent.postId },
+        data: { commentCount: { increment: 1 } },
+      });
+
+      this.notificationService.createNotification({
+        recipientId: parent.authorId,
+        actorId: userId,
+        postId: parent.postId,
+        commentId: reply.id,
+        type: NotificationType.REPLY,
+        title: 'New reply',
+        message: 'Someone replied to your comment.',
+      }).catch(() => {});
+
+      return reply;
+    });
+  }
+
+  async findOne(id: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id },
+      include: { author: this.authorSelect },
+    });
+
+    if (!comment || comment.deletedAt) {
+      throw new NotFoundException('Comment not found');
+    }
+    return comment;
+  }
+
+  async findByPost(postId: string, query: ListCommentsDto) {
+    const { page = 1, limit = 10 } = query;
+
+    // Concurrently handle fetching records and counting to avoid synchronous blocking cascades
+    const [comments, total] = await Promise.all([
+      this.prisma.comment.findMany({
+        where: { postId, deletedAt: null },
+        include: { author: { select: { username: true, displayName: true, avatarUrl: true } } },
+        orderBy: { createdAt: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.comment.count({
+        where: { postId, deletedAt: null, parentId: null },
+      }),
+    ]);
+
+    return {
+      comments,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async update(id: string, dto: UpdateCommentDto, userId: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id },
+      select: { authorId: true, deletedAt: true },
+    });
+
+    if (!comment || comment.deletedAt) {
+      throw new NotFoundException('Comment not found');
+    }
+    if (comment.authorId !== userId) {
+      throw new ForbiddenException('You are not allowed to edit this comment');
+    }
+
+    const updated = await this.prisma.comment.update({
+      where: { id },
+      data: { body: dto.body },
+      include: { author: { select: { id: true, username: true } } },
+    });
+
+    return { message: 'Comment updated successfully', comment: updated };
+  }
+
+  async remove(id: string, userId: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id },
+      select: { authorId: true, postId: true, deletedAt: true },
+    });
+
+    if (!comment || comment.deletedAt) {
+      throw new NotFoundException('Comment not found');
+    }
+    if (comment.authorId !== userId) {
+      throw new ForbiddenException('You are not allowed to delete this comment');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.comment.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      }),
+      this.prisma.post.update({
+        where: { id: comment.postId },
+        data: { commentCount: { decrement: 1 } },
+      }),
+    ]);
+
+    return { message: 'Comment deleted successfully' };
+  }
+
+  async voteComment(commentId: string, dto: VoteDto, userId: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { deletedAt: true },
+    });
+
+    if (!comment || comment.deletedAt) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const existingVote = await tx.vote.findUnique({
+        where: { userId_commentId: { userId, commentId } },
+        select: { id: true, voteType: true },
+      });
+
+      const isUpvote = dto.voteType === 'UPVOTE';
+
+      if (!existingVote) {
+        await tx.vote.create({
+          data: { userId, commentId, voteType: dto.voteType },
+        });
+        await tx.comment.update({
+          where: { id: commentId },
+          data: { score: { increment: isUpvote ? 1 : -1 } },
+        });
+        return { message: 'Vote added' };
+      }
+
+      if (existingVote.voteType === dto.voteType) {
+        await tx.vote.delete({ where: { id: existingVote.id } });
+        await tx.comment.update({
+          where: { id: commentId },
+          data: { score: { increment: isUpvote ? -1 : 1 } },
+        });
+        return { message: 'Vote removed' };
+      }
+
+      await tx.vote.update({
+        where: { id: existingVote.id },
+        data: { voteType: dto.voteType },
+      });
+      await tx.comment.update({
+        where: { id: commentId },
+        data: { score: { increment: isUpvote ? 2 : -2 } },
+      });
+
+      return { message: 'Vote updated' };
+    });
+  }
+}
+```
+
+
+========================================
+FILE: src\comment\dto\create-comment.dto.ts
+========================================
+```ts
+import {
+    IsOptional,
+    IsString,
+    IsUUID,
+    MaxLength,
+    MinLength,
+  } from 'class-validator';
+  
+  export class CreateCommentDto {
+    @IsString()
+    @MinLength(1)
+    @MaxLength(10000)
+    body: string;
+  
+    @IsOptional()
+    @IsUUID()
+    parentId?: string;
+  }
+```
+
+
+========================================
+FILE: src\comment\dto\list-comments.dto.ts
+========================================
+```ts
+import {
+    Type,
+  } from 'class-transformer';
+  
+  import {
+    IsInt,
+    IsOptional,
+    Min,
+  } from 'class-validator';
+  
+  export class ListCommentsDto {
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    page = 1;
+  
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    limit = 20;
+  }
+```
+
+
+========================================
+FILE: src\comment\dto\update-comment.dto.ts
+========================================
+```ts
+import {
+    IsString,
+    MaxLength,
+    MinLength,
+  } from 'class-validator';
+  
+  export class UpdateCommentDto {
+    @IsString()
+    @MinLength(1)
+    @MaxLength(10000)
+    body: string;
+  }
+```
+
+
+========================================
+FILE: src\comment\dto\vote.dto.ts
+========================================
+```ts
+import { IsEnum } from 'class-validator';
+import { VoteType } from '@prisma/client';
+
+export class VoteDto {
+  @IsEnum(VoteType)
+  voteType: VoteType;
+}
+```
+
+
+========================================
+FILE: src\feed\dto\feed-post-response.dto.ts
+========================================
+```ts
+export class FeedPostResponseDto {
+    id: string;
+  
+    title: string;
+  
+    content: string | null;
+  
+    score: number;
+  
+    commentCount: number;
+  
+    createdAt: Date;
+  
+    author: {
+      username: string;
+  
+      displayName: string | null;
+  
+      avatarUrl: string | null;
+    };
+  
+    subreddit: {
+      id: string;
+  
+      name: string;
+  
+      title: string;
+    };
+  }
+```
+
+
+========================================
+FILE: src\feed\dto\list-feed.dto.ts
+========================================
+```ts
+import {
+    IsIn,
+    IsInt,
+    IsOptional,
+    Min,
+  } from 'class-validator';
+  
+  import { Type } from 'class-transformer';
+  
+  export class ListFeedDto {
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @IsOptional()
+    page = 1;
+  
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @IsOptional()
+    limit = 10;
+  
+    @IsOptional()
+    @IsIn([
+      'new',
+      'top',
+      'hot',
+    ])
+    sort: 'new' | 'top' | 'hot' = 'hot';
+  
+    @IsOptional()
+    @IsIn([
+      'hour',
+      'day',
+      'week',
+      'month',
+      'year',
+      'all',
+    ])
+    time:
+      | 'hour'
+      | 'day'
+      | 'week'
+      | 'month'
+      | 'year'
+      | 'all' = 'all';
+  }
+```
+
+
+========================================
+FILE: src\feed\feed.controller.ts
+========================================
+```ts
+import {
+    Controller,
+    Get,
+    Query,
+  } from '@nestjs/common';
+  
+  import { FeedService } from './feed.service';
+  import { ListFeedDto } from './dto/list-feed.dto';
+  
+  @Controller('feed')
+  export class FeedController {
+    constructor(
+      private readonly feedService: FeedService,
+    ) {}
+  
+    @Get()
+    findFeed(
+      @Query() query: ListFeedDto,
+    ) {
+      return this.feedService.findFeed(query);
+    }
+  }
+```
+
+
+========================================
+FILE: src\feed\feed.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { FeedController } from './feed.controller';
+import { FeedService } from './feed.service';
+import { PrismaModule } from 'src/prisma/prisma.module';
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [FeedController],
+  providers: [FeedService],
+})
+export class FeedModule {}
+```
+
+
+========================================
+FILE: src\feed\feed.service.ts
+========================================
+```ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+import { ListFeedDto } from './dto/list-feed.dto';
+import { FeedPostResponseDto } from './dto/feed-post-response.dto';
+
+@Injectable()
+export class FeedService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private readonly feedSelection: Prisma.PostSelect = {
+    id: true,
+    title: true,
+    content: true,
+    score: true,
+    commentCount: true,
+    createdAt: true,
+    author: { select: { username: true, displayName: true, avatarUrl: true } },
+    subreddit: { select: { id: true, name: true, title: true } },
+  };
+
+  async findFeed(query: ListFeedDto) {
+    const strategy: Record<string, (q: ListFeedDto) => Promise<any>> = {
+      new: (q) => this.getStandardFeed(q, { createdAt: 'desc' }),
+      top: (q) => this.getStandardFeed(q, { score: 'desc' }),
+      hot: (q) => this.getHotFeed(q),
+    };
+
+    const runStrategy = strategy[query.sort] || strategy.hot;
+    return runStrategy(query);
+  }
+
+  private async getStandardFeed(query: ListFeedDto, orderBy: Prisma.PostOrderByWithRelationInput) {
+    const { page = 1, limit = 10 } = query;
+    const where = this.buildWhereClause(query);
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where,
+        select: this.feedSelection,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.post.count({ where }),
+    ]);
+
+    return {
+      feed: posts as unknown as FeedPostResponseDto[],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  private async getHotFeed(query: ListFeedDto) {
+    const { page = 1, limit = 10 } = query;
+    const where = this.buildWhereClause(query);
+
+    // Fetching capped maximum sample sizes handles hot calculations with minimal runtime degradation
+    const posts = await this.prisma.post.findMany({
+      where,
+      select: this.feedSelection,
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    const now = Date.now();
+    const rankedPosts = posts
+      .map((post) => ({
+        post,
+        hotScore: post.score / Math.pow(((now - new Date(post.createdAt).getTime()) / 3600000) + 2, 1.5),
+      }))
+      .sort((a, b) => b.hotScore - a.hotScore);
+
+    const paginatedItems = rankedPosts
+      .slice((page - 1) * limit, page * limit)
+      .map((item) => item.post);
+
+    return {
+      feed: paginatedItems as unknown as FeedPostResponseDto[],
+      pagination: {
+        page,
+        limit,
+        total: rankedPosts.length,
+        totalPages: Math.ceil(rankedPosts.length / limit),
+      },
+    };
+  }
+
+  private buildWhereClause(query: ListFeedDto): Prisma.PostWhereInput {
+    const where: Prisma.PostWhereInput = { deletedAt: null };
+
+    if (query.sort === 'top' && query.time && query.time !== 'all') {
+      const timeOffsets: Record<string, number> = {
+        hour: 3600000,
+        day: 86400000,
+        week: 604800000,
+        month: 2592000000,
+        year: 31536000000,
+      };
+
+      const offset = timeOffsets[query.time];
+      if (offset) {
+        where.createdAt = { gte: new Date(Date.now() - offset) };
+      }
+    }
+
+    return where;
+  }
+}
+```
+
+
+========================================
+FILE: src\main.ts
+========================================
+```ts
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      forbidUnknownValues: true, 
+    }),
+  );
+  const port = Number(process.env.PORT) || 3000;
+  await app.listen(port);
+}
+bootstrap();
+```
+
+
+========================================
+FILE: src\notification\notification.controller.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { NotificationController } from './notification.controller';
+
+describe('NotificationController', () => {
+  let controller: NotificationController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [NotificationController],
+    }).compile();
+
+    controller = module.get<NotificationController>(NotificationController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\notification\notification.controller.ts
+========================================
+```ts
+import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { NotificationService } from './notification.service';
+
+@Controller('notifications')
+@UseGuards(JwtAuthGuard)
+export class NotificationController {
+  constructor(private readonly notificationService: NotificationService) {}
+
+  @Get()
+  findAll(@CurrentUser() user: JwtPayload) {
+    return this.notificationService.findAll(user.sub);
+  }
+
+  @Patch(':id/read')
+  markAsRead(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.notificationService.markAsRead(id, user.sub);
+  }
+
+  @Patch('read-all')
+  markAllAsRead(@CurrentUser() user: JwtPayload) {
+    return this.notificationService.markAllAsRead(user.sub);
+  }
+}
+```
+
+
+========================================
+FILE: src\notification\notification.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+
+import { PrismaModule } from '../prisma/prisma.module';
+
+import { NotificationController } from './notification.controller';
+import { NotificationService } from './notification.service';
+
+@Module({
+  imports: [PrismaModule],
+
+  controllers: [NotificationController],
+
+  providers: [NotificationService],
+
+  exports: [NotificationService],
+})
+export class NotificationModule {}
+```
+
+
+========================================
+FILE: src\notification\notification.service.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { NotificationService } from './notification.service';
+
+describe('NotificationService', () => {
+  let service: NotificationService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [NotificationService],
+    }).compile();
+
+    service = module.get<NotificationService>(NotificationService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\notification\notification.service.ts
+========================================
+```ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class NotificationService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async createNotification(data: {
+    recipientId: string;
+    actorId?: string;
+    postId?: string;
+    commentId?: string;
+    type: NotificationType;
+    title: string;
+    message?: string;
+  }) {
+    if (data.actorId && data.actorId === data.recipientId) return;
+
+    return this.prisma.notification.create({
+      data: {
+        recipientId: data.recipientId,
+        actorId: data.actorId,
+        postId: data.postId,
+        commentId: data.commentId,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+      },
+    });
+  }
+
+  async findAll(userId: string) {
+    return this.prisma.notification.findMany({
+      where: { recipientId: userId },
+      include: {
+        actor: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        post: { select: { id: true, title: true } },
+        comment: { select: { id: true, body: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async markAsRead(id: string, userId: string) {
+    // Optimization: Use updateMany atomically to save an entire query round-trip
+    const updateResult = await this.prisma.notification.updateMany({
+      where: { id, recipientId: userId, isRead: false },
+      data: { isRead: true },
+    });
+
+    if (updateResult.count === 0) {
+      // Check if it exists at all to throw the correct exception type
+      const exists = await this.prisma.notification.count({ where: { id, recipientId: userId } });
+      if (!exists) throw new NotFoundException('Notification not found');
+    }
+
+    return { message: 'Notification marked as read successfully' };
+  }
+
+  async markAllAsRead(userId: string) {
+    await this.prisma.notification.updateMany({
+      where: { recipientId: userId, isRead: false },
+      data: { isRead: true },
+    });
+
+    return { message: 'All notifications marked as read' };
+  }
+}
+```
+
+
+========================================
+FILE: src\post\dto\create-post.dto.ts
+========================================
+```ts
+import {
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    MaxLength,
+  } from 'class-validator';
+  
+  export class CreatePostDto {
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(300)
+    title: string;
+  
+    @IsString()
+    @IsOptional()
+    @MaxLength(40000)
+    content?: string;
+  
+    @IsString()
+    @IsNotEmpty()
+    subredditName: string;
+  }
+```
+
+
+========================================
+FILE: src\post\dto\list-posts.dto.ts
+========================================
+```ts
+import {
+    IsInt,
+    IsOptional,
+    Max,
+    Min,
+  } from 'class-validator';
+  
+  import { Type } from 'class-transformer';
+  
+  export class ListPostsDto {
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    page = 1;
+  
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @Max(100)
+    limit = 20;
+  }
+```
+
+
+========================================
+FILE: src\post\dto\update-post.dto.ts
+========================================
+```ts
+import {
+    IsOptional,
+    IsString,
+    MaxLength,
+  } from 'class-validator';
+  
+  export class UpdatePostDto {
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    title?: string;
+  
+    @IsOptional()
+    @IsString()
+    content?: string;
+  }
+```
+
+
+========================================
+FILE: src\post\post.controller.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { PostController } from './post.controller';
+
+describe('PostController', () => {
+  let controller: PostController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [PostController],
+    }).compile();
+
+    controller = module.get<PostController>(PostController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\post\post.controller.ts
+========================================
+```ts
+import { Body, Controller, Delete, Patch, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { PrismaService } from '../prisma/prisma.service';
+import { PostService } from './post.service';
+import { CreatePostDto } from './dto/create-post.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Get, Param,Query } from '@nestjs/common';
+import { ListPostsDto } from './dto/list-posts.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { NotificationService } from '../notification/notification.service';
+@Controller('posts')
+@UseGuards(JwtAuthGuard)
+export class PostController {
+    
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly postService: PostService,
+        private readonly notificationService: NotificationService,
+    ) {}
+    @Post()
+    create(
+        @Body() dto: CreatePostDto, 
+        @CurrentUser() user: JwtPayload, 
+    ) {
+        return this.postService.create(
+        dto,
+        user.sub,
+        );
+    }
+    @Get(':id')
+    findOne(
+        @Param('id') id: string,
+    ) {
+        return this.postService.findOne(id);
+    }
+    @Get('/subreddit/:name')
+    findBySubreddit(
+      @Param('name') name: string,
+      @Query() query: ListPostsDto,
+    ) {
+      return this.postService.findBySubreddit(
+        name,
+        query,
+      );
+    }
+    @Patch(':id')
+    update(
+      @Param('id') id: string,
+      @Body() dto: UpdatePostDto,
+      @CurrentUser() user: JwtPayload,
+    ) {
+      return this.postService.update(
+        id,
+        dto,
+        user.sub,
+      );
+    }
+    
+    @Delete(':id')
+    remove(
+      @Param('id') id: string,
+      @CurrentUser() user: JwtPayload,
+    ) {
+      return this.postService.remove(
+        id,
+        user.sub,
+      );
+    }
+    @Post(':id/upvote')
+    upvote(
+      @Param('id') postId: string,
+      @CurrentUser() user: JwtPayload,
+    ) {
+      return this.postService.upvote(
+        postId,
+        user.sub,
+      );
+    }
+    
+    @Post(':id/downvote')
+    downvote(
+      @Param('id') postId: string,
+      @CurrentUser() user: JwtPayload,
+    ) {
+      return this.postService.downvote(
+        postId,
+        user.sub,
+      );
+    }
+    
+    @Delete(':id/vote')
+    removeVote(
+      @Param('id') postId: string,
+      @CurrentUser() user: JwtPayload,
+    ) {
+      return this.postService.removeVote(
+        postId,
+        user.sub,
+      );
+    }
+}
+
+```
+
+
+========================================
+FILE: src\post\post.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { PostController } from './post.controller';
+import { PostService } from './post.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { NotificationModule } from '../notification/notification.module';
+@Module({ 
+    imports: [PrismaModule,NotificationModule,],
+    controllers: [PostController],
+    providers: [PostService],
+})
+export class PostModule {}
+
+```
+
+
+========================================
+FILE: src\post\post.service.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { PostService } from './post.service';
+
+describe('PostService', () => {
+  let service: PostService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [PostService],
+    }).compile();
+
+    service = module.get<PostService>(PostService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\post\post.service.ts
+========================================
+```ts
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreatePostDto } from './dto/create-post.dto';
+import { ListPostsDto } from './dto/list-posts.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { Prisma, VoteType, NotificationType } from '@prisma/client';
+import { NotificationService } from '../notification/notification.service';
+
+@Injectable()
+export class PostService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
+
+  async create(dto: CreatePostDto, userId: string) {
+    try {
+      // Connect handles linking and throws a structural Prisma error if the subreddit doesn't exist
+      return await this.prisma.post.create({
+        data: {
+          title: dto.title,
+          content: dto.content,
+          author: { connect: { id: userId } },
+          subreddit: { connect: { name: dto.subredditName } },
+        },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          createdAt: true,
+          author: { select: { id: true, username: true } },
+          subreddit: { select: { id: true, name: true, title: true } },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Subreddit not found');
+      }
+      throw error;
+    }
+  }
+
+  async findOne(id: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        subreddit: { select: { id: true, name: true, title: true } },
+      },
+    });
+
+    if (!post) throw new NotFoundException('Post not found');
+    return post;
+  }
+
+  async findBySubreddit(name: string, query: ListPostsDto) {
+    const { page = 1, limit = 10 } = query;
+
+    const subreddit = await this.prisma.subreddit.findUnique({ where: { name } });
+    if (!subreddit) throw new NotFoundException('Subreddit not found');
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where: { subredditId: subreddit.id },
+        include: { author: { select: { username: true, displayName: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.post.count({ where: { subredditId: subreddit.id } }),
+    ]);
+
+    return {
+      posts,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async update(id: string, dto: UpdatePostDto, userId: string) {
+    const post = await this.prisma.post.findFirst({ where: { id, deletedAt: null } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.authorId !== userId) throw new ForbiddenException('You are not allowed to edit this post');
+
+    const updatedPost = await this.prisma.post.update({
+      where: { id },
+      data: { title: dto.title, content: dto.content },
+      include: {
+        author: { select: { id: true, username: true } },
+        subreddit: { select: { id: true, name: true } },
+      },
+    });
+
+    return { message: 'Post updated successfully', post: updatedPost };
+  }
+
+  async remove(id: string, userId: string) {
+    const post = await this.prisma.post.findFirst({ where: { id, deletedAt: null } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.authorId !== userId) throw new ForbiddenException('You are not allowed to delete this post');
+
+    await this.prisma.post.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    return { message: 'Post deleted successfully' };
+  }
+
+  async upvote(postId: string, userId: string) {
+    return this.vote(postId, userId, VoteType.UPVOTE);
+  }
+
+  async downvote(postId: string, userId: string) {
+    return this.vote(postId, userId, VoteType.DOWNVOTE);
+  }
+
+  private async vote(postId: string, userId: string, voteType: VoteType) {
+    return this.prisma.$transaction(async (tx) => {
+      const post = await tx.post.findUnique({ where: { id: postId } });
+      if (!post || post.deletedAt) throw new NotFoundException('Post not found');
+
+      const existingVote = await tx.vote.findUnique({
+        where: { userId_postId: { userId, postId } },
+      });
+
+      if (existingVote?.voteType === voteType) {
+        return { message: 'Already voted' };
+      }
+
+      let scoreDelta = voteType === VoteType.UPVOTE ? 1 : -1;
+      let message = 'Vote added';
+
+      if (existingVote) {
+        scoreDelta *= 2; // Switching votes requires doubling the impact direction
+        message = 'Vote updated';
+      }
+
+      await tx.vote.upsert({
+        where: { userId_postId: { userId, postId } },
+        update: { voteType },
+        create: { userId, postId, voteType },
+      });
+
+      await tx.post.update({
+        where: { id: postId },
+        data: { score: { increment: scoreDelta } },
+      });
+
+      if (voteType === VoteType.UPVOTE) {
+        await this.notificationService.createNotification({
+          recipientId: post.authorId,
+          actorId: userId,
+          postId: post.id,
+          type: NotificationType.UPVOTE,
+          title: 'Post upvoted',
+          message: 'Someone upvoted your post.',
+        });
+      }
+
+      return { message };
+    });
+  }
+
+  async removeVote(postId: string, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const existingVote = await tx.vote.findUnique({
+        where: { userId_postId: { userId, postId } },
+      });
+
+      if (!existingVote) throw new NotFoundException('Vote not found');
+
+      await tx.vote.delete({ where: { id: existingVote.id } });
+
+      const scoreDelta = existingVote.voteType === VoteType.UPVOTE ? -1 : 1;
+      await tx.post.update({
+        where: { id: postId },
+        data: { score: { increment: scoreDelta } },
+      });
+
+      return { message: 'Vote removed successfully' };
+    });
+  }
+}
+```
+
+
+========================================
+FILE: src\prisma\prisma.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+
+@Module({
+  providers: [PrismaService],
+  exports: [PrismaService],
+})
+export class PrismaModule {}
+
+```
+
+
+========================================
+FILE: src\prisma\prisma.service.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from './prisma.service';
+
+describe('PrismaService', () => {
+  let service: PrismaService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [PrismaService],
+    }).compile();
+
+    service = module.get<PrismaService>(PrismaService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\prisma\prisma.service.ts
+========================================
+```ts
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import 'dotenv/config';
+
+@Injectable()
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
+  constructor() {
+    const adapter = new PrismaPg({
+      connectionString: process.env.DATABASE_URL!,
+    });
+
+    super({
+      adapter,
+    });
+  }
+
+  async onModuleInit() {
+    await this.$connect();
+    console.log('✅ Prisma Connected');
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+}
+```
+
+
+========================================
+FILE: src\report\dto\create-report.dto.ts
+========================================
+```ts
+import {
+    IsEnum,
+    IsOptional,
+    IsString,
+    IsUUID,
+    MaxLength,
+    ValidateIf,
+  } from 'class-validator';
+  
+  import { ReportReason } from '@prisma/client';
+  
+  export class CreateReportDto {
+    @IsOptional()
+    @IsUUID()
+    postId?: string;
+  
+    @IsOptional()
+    @IsUUID()
+    commentId?: string;
+  
+    @IsOptional()
+    @IsUUID()
+    reportedUserId?: string;
+  
+    @IsEnum(ReportReason)
+    reason: ReportReason;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    description?: string;
+  }
+```
+
+
+========================================
+FILE: src\report\report.controller.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { ReportController } from './report.controller';
+
+describe('ReportController', () => {
+  let controller: ReportController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [ReportController],
+    }).compile();
+
+    controller = module.get<ReportController>(ReportController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\report\report.controller.ts
+========================================
+```ts
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CreateReportDto } from './dto/create-report.dto';
+import { ReportService } from './report.service';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+
+@Controller('reports')
+@UseGuards(JwtAuthGuard)
+export class ReportController {
+  constructor(private readonly reportService: ReportService) {}
+
+  @Post()
+  create(@Body() dto: CreateReportDto, @CurrentUser() user: JwtPayload) {
+    return this.reportService.create(dto, user.sub);
+  }
+
+  @Get()
+  findAll() {
+    return this.reportService.findAll();
+  }
+
+  @Patch(':id/resolve')
+  resolve(@Param('id') id: string) {
+    return this.reportService.resolve(id);
+  }
+
+  @Patch(':id/dismiss')
+  dismiss(@Param('id') id: string) {
+    return this.reportService.dismiss(id);
+  }
+}
+```
+
+
+========================================
+FILE: src\report\report.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { ReportService } from './report.service';
+import { ReportController } from './report.controller';
+
+@Module({
+  providers: [ReportService],
+  controllers: [ReportController]
+})
+export class ReportModule {}
+
+```
+
+
+========================================
+FILE: src\report\report.service.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { ReportService } from './report.service';
+
+describe('ReportService', () => {
+  let service: ReportService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [ReportService],
+    }).compile();
+
+    service = module.get<ReportService>(ReportService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\report\report.service.ts
+========================================
+```ts
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateReportDto } from './dto/create-report.dto';
+import { ReportStatus } from '@prisma/client';
+
+@Injectable()
+export class ReportService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(dto: CreateReportDto, reporterId: string) {
+    const targets = [dto.postId, dto.commentId, dto.reportedUserId].filter(Boolean);
+    if (targets.length !== 1) {
+      throw new BadRequestException('Exactly one target (postId, commentId, or reportedUserId) must be provided.');
+    }
+
+    // 1. Post Target Validation
+    if (dto.postId) {
+      const post = await this.prisma.post.findUnique({ where: { id: dto.postId } });
+      if (!post || post.deletedAt) throw new NotFoundException('Post not found');
+      if (post.authorId === reporterId) throw new BadRequestException('You cannot report your own post.');
+    }
+
+    // 2. Comment Target Validation
+    if (dto.commentId) {
+      const comment = await this.prisma.comment.findUnique({ where: { id: dto.commentId } });
+      if (!comment || comment.deletedAt) throw new NotFoundException('Comment not found');
+      if (comment.authorId === reporterId) throw new BadRequestException('You cannot report your own comment.');
+    }
+
+    // 3. User Target Validation
+    if (dto.reportedUserId) {
+      if (dto.reportedUserId === reporterId) throw new BadRequestException('You cannot report yourself.');
+      const user = await this.prisma.user.findUnique({ where: { id: dto.reportedUserId } });
+      if (!user || user.status === 'DELETED') throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.report.create({
+      data: {
+        reporterId,
+        reportedUserId: dto.reportedUserId,
+        postId: dto.postId,
+        commentId: dto.commentId,
+        reason: dto.reason,
+        description: dto.description,
+      },
+    });
+  }
+
+  async findAll() {
+    return this.prisma.report.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        reporter: { select: { id: true, username: true } },
+        reportedUser: { select: { id: true, username: true } },
+      },
+    });
+  }
+
+  async resolve(id: string) {
+    await this.verifyReportExists(id);
+    return this.prisma.report.update({
+      where: { id },
+      data: { status: ReportStatus.REVIEWED },
+    });
+  }
+
+  async dismiss(id: string) {
+    await this.verifyReportExists(id);
+    return this.prisma.report.update({
+      where: { id },
+      data: { status: ReportStatus.DISMISSED },
+    });
+  }
+
+  private async verifyReportExists(id: string) {
+    const report = await this.prisma.report.findUnique({ where: { id } });
+    if (!report) throw new NotFoundException('Report not found');
+  }
+}
+```
+
+
+========================================
+FILE: src\search\dto\search.dto.ts
+========================================
+```ts
+import {
+    IsInt,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    Min,
+  } from 'class-validator';
+  
+  import { Type } from 'class-transformer';
+  
+  export class SearchDto {
+    @IsString()
+    @IsNotEmpty()
+    q: string;
+  
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @IsOptional()
+    page = 1;
+  
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @IsOptional()
+    limit = 10;
+  }
+```
+
+
+========================================
+FILE: src\search\search.controller.ts
+========================================
+```ts
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { SearchService } from './search.service';
+import { SearchDto } from './dto/search.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+@Controller('search')
+@UseGuards(JwtAuthGuard)
+export class SearchController {
+  constructor(private readonly searchService: SearchService) {}
+
+  @Get()
+  search(@Query() dto: SearchDto) {
+    return this.searchService.search(dto);
+  }
+}
+```
+
+
+========================================
+FILE: src\search\search.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { PrismaModule } from '../prisma/prisma.module';
+import { SearchController } from './search.controller';
+import { SearchService } from './search.service';
+
+@Module({
+  imports: [PrismaModule],
+
+  controllers: [SearchController],
+
+  providers: [SearchService],
+})
+export class SearchModule {}
+```
+
+
+========================================
+FILE: src\search\search.service.ts
+========================================
+```ts
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { SearchDto } from './dto/search.dto';
+
+@Injectable()
+export class SearchService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async search(dto: SearchDto) {
+    const { q, page = 1, limit = 10 } = dto;
+    const skip = (page - 1) * limit;
+
+    // Parallel execution across non-blocking connections via Promise.all
+    const [posts, users, subreddits] = await Promise.all([
+      this.prisma.post.findMany({
+        where: {
+          deletedAt: null,
+          OR: [
+            { title: { contains: q, mode: 'insensitive' } },
+            { content: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          score: true,
+          commentCount: true,
+          createdAt: true,
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.findMany({
+        where: {
+          deletedAt: null,
+          OR: [
+            { username: { contains: q, mode: 'insensitive' } },
+            { displayName: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          bio: true,
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.subreddit.findMany({
+        where: {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { title: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          title: true,
+          memberCount: true,
+        },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return { posts, users, subreddits };
+  }
+}
+```
+
+
+========================================
+FILE: src\subreddit\dto\create-subreddit.dto.ts
+========================================
+```ts
+import {
+    IsBoolean,
+    IsOptional,
+    IsString,
+    Length,
+  } from 'class-validator';
+  
+  export class CreateSubredditDto {
+    @IsString()
+    @Length(3, 21)
+    name: string;
+  
+    @IsString()
+    @Length(3, 100)
+    title: string;
+  
+    @IsOptional()
+    @IsString()
+    description?: string;
+  
+    @IsOptional()
+    @IsString()
+    rules?: string;
+  
+    @IsOptional()
+    @IsBoolean()
+    isNsfw?: boolean;
+  }
+```
+
+
+========================================
+FILE: src\subreddit\dto\list-members.dto.ts
+========================================
+```ts
+import {
+  IsInt,
+  IsOptional,
+  Min,
+} from 'class-validator';
+
+import { Type } from 'class-transformer';
+
+export class ListMembersDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page = 1;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit = 20;
+}
+```
+
+
+========================================
+FILE: src\subreddit\dto\list-subreddits.dto.ts
+========================================
+```ts
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
+
+export class ListSubredditsDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit = 10;
+}
+```
+
+
+========================================
+FILE: src\subreddit\subreddit.controller.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { SubredditController } from './subreddit.controller';
+
+describe('SubredditController', () => {
+  let controller: SubredditController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [SubredditController],
+    }).compile();
+
+    controller = module.get<SubredditController>(SubredditController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\subreddit\subreddit.controller.ts
+========================================
+```ts
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CreateSubredditDto } from './dto/create-subreddit.dto';
+import { ListSubredditsDto } from './dto/list-subreddits.dto';
+import { ListPostsDto } from '../post/dto/list-posts.dto';
+import { ListMembersDto } from './dto/list-members.dto';
+import { SubredditService } from './subreddit.service';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+
+@Controller('subreddits')
+@UseGuards(JwtAuthGuard)
+export class SubredditController {
+  constructor(private readonly subredditService: SubredditService) {}
+
+  @Post()
+  create(@Body() dto: CreateSubredditDto, @CurrentUser() user: JwtPayload) {
+    return this.subredditService.create(dto, user.sub);
+  }
+
+  @Get(':name')
+  findOne(@Param('name') name: string) {
+    return this.subredditService.findOne(name);
+  }
+
+  @Get()
+  findAll(@Query() query: ListSubredditsDto) {
+    return this.subredditService.findAll(query);
+  }
+
+  @Post(':name/join')
+  join(@Param('name') name: string, @CurrentUser() user: JwtPayload) {
+    return this.subredditService.join(name, user.sub);
+  }
+
+  @Delete(':name/leave')
+  leave(@Param('name') name: string, @CurrentUser() user: JwtPayload) {
+    return this.subredditService.leave(name, user.sub);
+  }
+
+  @Get(':name/posts')
+  findPosts(@Param('name') name: string, @Query() query: ListPostsDto) {
+    return this.subredditService.findPosts(name, query);
+  }
+
+  @Get(':name/members')
+  findMembers(@Param('name') name: string, @Query() query: ListMembersDto) {
+    return this.subredditService.findMembers(name, query);
+  }
+}
+```
+
+
+========================================
+FILE: src\subreddit\subreddit.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { SubredditController } from './subreddit.controller';
+import { SubredditService } from './subreddit.service';
+import { PrismaModule } from '../prisma/prisma.module';
+@Module({
+  imports: [PrismaModule],
+  controllers: [SubredditController],
+  providers: [SubredditService]
+})
+export class SubredditModule {}
+
+```
+
+
+========================================
+FILE: src\subreddit\subreddit.service.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { SubredditService } from './subreddit.service';
+
+describe('SubredditService', () => {
+  let service: SubredditService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [SubredditService],
+    }).compile();
+
+    service = module.get<SubredditService>(SubredditService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\subreddit\subreddit.service.ts
+========================================
+```ts
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateSubredditDto } from './dto/create-subreddit.dto';
+import { ListSubredditsDto } from './dto/list-subreddits.dto';
+import { ListPostsDto } from '../post/dto/list-posts.dto';
+import { ListMembersDto } from './dto/list-members.dto';
+
+@Injectable()
+export class SubredditService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(dto: CreateSubredditDto, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.subreddit.findUnique({ where: { name: dto.name } });
+      if (existing) throw new BadRequestException('Subreddit name already taken');
+
+      const subreddit = await tx.subreddit.create({
+        data: {
+          name: dto.name,
+          title: dto.title,
+          description: dto.description,
+          rules: dto.rules,
+          isNsfw: dto.isNsfw ?? false,
+          creatorId: userId,
+          memberCount: 1,
+        },
+      });
+
+      await tx.membership.create({
+        data: {
+          subredditId: subreddit.id,
+          userId,
+          role: 'MODERATOR',
+        },
+      });
+
+      return subreddit;
+    });
+  }
+
+  async findOne(name: string) {
+    const subreddit = await this.prisma.subreddit.findUnique({
+      where: { name },
+    });
+    if (!subreddit) throw new NotFoundException('Subreddit not found');
+    return subreddit;
+  }
+
+  async findAll(query: ListSubredditsDto) {
+    const { page = 1, limit = 10 } = query;
+    return this.prisma.subreddit.findMany({
+      orderBy: { memberCount: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  async join(name: string, userId: string) {
+    const subreddit = await this.findOne(name);
+
+    return this.prisma.$transaction(async (tx) => {
+      const exists = await tx.membership.findUnique({
+        where: { userId_subredditId: { userId, subredditId: subreddit.id } },
+      });
+      if (exists) throw new BadRequestException('Already a member');
+
+      await tx.membership.create({
+        data: { subredditId: subreddit.id, userId, role: 'MEMBER' },
+      });
+
+      return tx.subreddit.update({
+        where: { id: subreddit.id },
+        data: { memberCount: { increment: 1 } },
+      });
+    });
+  }
+
+  async leave(name: string, userId: string) {
+    const subreddit = await this.findOne(name);
+    if (subreddit.creatorId === userId) throw new BadRequestException('Creators cannot leave their subreddit');
+
+    return this.prisma.$transaction(async (tx) => {
+      const exists = await tx.membership.findUnique({
+        where: { userId_subredditId: { userId, subredditId: subreddit.id } },
+      });
+      if (!exists) throw new BadRequestException('Not a member');
+
+      await tx.membership.delete({
+        where: { userId_subredditId: { userId, subredditId: subreddit.id } },
+      });
+
+      return tx.subreddit.update({
+        where: { id: subreddit.id },
+        data: { memberCount: { decrement: 1 } },
+      });
+    });
+  }
+
+  async findPosts(name: string, query: ListPostsDto) {
+    const { page = 1, limit = 10 } = query;
+    const subreddit = await this.findOne(name);
+
+    return this.prisma.post.findMany({
+      where: { subredditId: subreddit.id, deletedAt: null },
+      orderBy: { createdAt: 'desc' }, // Leverages matching multi-column index cleanly
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        author: { select: { username: true, displayName: true, avatarUrl: true } },
+      },
+    });
+  }
+
+  async findMembers(name: string, query: ListMembersDto) {
+    const { page = 1, limit = 20 } = query;
+    const subreddit = await this.findOne(name);
+
+    return this.prisma.membership.findMany({
+      where: { subredditId: subreddit.id },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+    });
+  }
+}
+```
+
+
+========================================
+FILE: src\users\dto\list-user-content.dto.ts
+========================================
+```ts
+import {
+    IsInt,
+    IsOptional,
+    Min,
+  } from 'class-validator';
+  
+  import { Type } from 'class-transformer';
+  
+  export class ListUserContentDto {
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @IsOptional()
+    page = 1;
+  
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @IsOptional()
+    limit = 10;
+  }
+```
+
+
+========================================
+FILE: src\users\dto\update-profile.dto.ts
+========================================
+```ts
+import {
+    IsOptional,
+    IsString,
+    IsUrl,
+    MaxLength,
+    IsEnum,
+  } from 'class-validator';
+  
+  import { Gender } from '@prisma/client';
+  
+  export class UpdateProfileDto {
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    displayName?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    bio?: string;
+  
+    @IsOptional()
+    @IsUrl()
+    avatarUrl?: string;
+  
+    @IsOptional()
+    @IsEnum(Gender)
+    gender?: Gender;
+  }
+```
+
+
+========================================
+FILE: src\users\dto\user-profile-response.dto.ts
+========================================
+```ts
+export class UserProfileResponseDto {
+    id: string;
+  
+    username: string;
+  
+    displayName: string | null;
+  
+    bio: string | null;
+  
+    avatarUrl: string | null;
+  
+    gender: string | null;
+  
+    createdAt: Date;
+  
+    karma: number;
+  
+    postCount: number;
+  
+    commentCount: number;
+  }
+```
+
+
+========================================
+FILE: src\users\users.controller.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { UsersController } from './users.controller';
+
+describe('UsersController', () => {
+  let controller: UsersController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [UsersController],
+    }).compile();
+
+    controller = module.get<UsersController>(UsersController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\users\users.controller.ts
+========================================
+```ts
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { UsersService } from './users.service';
+import { RegisterDto } from '../auth/dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ListUserContentDto } from './dto/list-user-content.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get(':username')
+  findProfile(@Param('username') username: string) {
+    return this.usersService.findProfile(username);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser() user: JwtPayload) {
+    return this.usersService.findMe(user.sub);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  updateProfile(@CurrentUser() user: JwtPayload, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(user.sub, dto);
+  }
+
+  @Get(':username/posts')
+  findPosts(@Param('username') username: string, @Query() query: ListUserContentDto) {
+    return this.usersService.findUserPosts(username, query);
+  }
+
+  @Get(':username/comments')
+  findComments(@Param('username') username: string, @Query() query: ListUserContentDto) {
+    return this.usersService.findUserComments(username, query);
+  }
+}
+```
+
+
+========================================
+FILE: src\users\users.module.ts
+========================================
+```ts
+import { Module } from '@nestjs/common';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
+import { PrismaModule } from '../prisma/prisma.module';
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [UsersController],
+  providers: [UsersService],
+})
+export class UsersModule {}
+```
+
+
+========================================
+FILE: src\users\users.service.spec.ts
+========================================
+```ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { UsersService } from './users.service';
+
+describe('UsersService', () => {
+  let service: UsersService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [UsersService],
+    }).compile();
+
+    service = module.get<UsersService>(UsersService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+
+```
+
+
+========================================
+FILE: src\users\users.service.ts
+========================================
+```ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ListUserContentDto } from './dto/list-user-content.dto';
+
+@Injectable()
+export class UsersService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        displayName: true,
+        bio: true,
+        avatarUrl: true,
+        gender: true,
+        status: true,
+        isEmailVerified: true,
+        createdAt: true,
+      },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async findProfile(username: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        bio: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
+    });
+    if (!user || user.status === 'DELETED') throw new NotFoundException('Profile not found');
+    return user;
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: dto,
+      select: { id: true, username: true, displayName: true, bio: true, avatarUrl: true },
+    });
+  }
+
+  async findUserPosts(username: string, query: ListUserContentDto) {
+    const { page = 1, limit = 10 } = query;
+    
+    const user = await this.prisma.user.findUnique({ where: { username } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where: { authorId: user.id, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.post.count({ where: { authorId: user.id, deletedAt: null } }),
+    ]);
+
+    return { posts, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+
+  async findUserComments(username: string, query: ListUserContentDto) {
+    const { page = 1, limit = 10 } = query;
+
+    const user = await this.prisma.user.findUnique({ where: { username } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const [comments, total] = await Promise.all([
+      this.prisma.comment.findMany({
+        where: { authorId: user.id, deletedAt: null },
+        include: { post: { select: { id: true, title: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.comment.count({ where: { authorId: user.id, deletedAt: null } }),
+    ]);
+
+    return { comments, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+}
+```
