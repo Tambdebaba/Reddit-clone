@@ -7,28 +7,31 @@ datasource db {
 }
 
 model User {
-  id              String         @id @default(uuid())
-  username        String         @unique @db.VarChar(30)
-  email           String         @unique
-  passwordHash    String
-  displayName     String?
-  bio             String?
-  avatarUrl       String?
-  gender          Gender?
-  isEmailVerified Boolean        @default(false)
-  status          UserStatus     @default(ACTIVE)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  deletedAt       DateTime?
-  comments        Comment[]
-  memberships     Membership[]
-  notifications   Notification[]
-  posts           Post[]
-  refreshTokens   RefreshToken[]
-  reports         Report[]
-  createdSubs     Subreddit[]
-  votes           Vote[]
-  watchHistory    WatchHistory[]
+  id                String         @id @default(uuid())
+  username          String         @unique @db.VarChar(30)
+  email             String         @unique
+  passwordHash      String
+  displayName       String?
+  bio               String?
+  avatarUrl         String?
+  gender            Gender?
+  isEmailVerified   Boolean        @default(false)
+  status            UserStatus     @default(ACTIVE)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+  comments          Comment[]
+  memberships       Membership[]
+  sentNotifications Notification[] @relation("NotificationActor")
+  notifications     Notification[] @relation("NotificationRecipient")
+  posts             Post[]
+  refreshTokens     RefreshToken[]
+  
+  createdSubs       Subreddit[]
+  votes             Vote[]
+  watchHistory      WatchHistory[]
+  reports           Report[]       @relation("ReportReporter")
+  reportedReports   Report[]       @relation("ReportedUser")
 }
 
 model RefreshToken {
@@ -78,52 +81,53 @@ model Membership {
 }
 
 model Post {
-  id           String         @id @default(uuid())
-  subredditId  String
-  authorId     String
-  title        String         @db.VarChar(300)
-  body         String?
-  postType     PostType       @default(TEXT)
-  imageUrl     String?
-  linkUrl      String?
-  score        Int            @default(0)
-  commentCount Int            @default(0)
-  isLocked     Boolean        @default(false)
-  isPinned     Boolean        @default(false)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  deletedAt    DateTime?
-  comments     Comment[]
-  author       User           @relation(fields: [authorId], references: [id])
-  subreddit    Subreddit      @relation(fields: [subredditId], references: [id])
-  reports      Report[]
-  votes        Vote[]
-  watchHistory WatchHistory[]
+  id            String         @id @default(uuid())
+  subredditId   String
+  authorId      String
+  title         String         @db.VarChar(300)
+  content       String?
+  postType      PostType       @default(TEXT)
+  imageUrl      String?
+  linkUrl       String?
+  score         Int            @default(0)
+  commentCount  Int            @default(0)
+  isLocked      Boolean        @default(false)
+  isPinned      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  comments      Comment[]
+  notifications Notification[]
+  author        User           @relation(fields: [authorId], references: [id])
+  subreddit     Subreddit      @relation(fields: [subredditId], references: [id])
+  reports       Report[]
+  votes         Vote[]
+  watchHistory  WatchHistory[]
 
   @@index([subredditId, createdAt])
   @@index([authorId])
 }
 
 model Comment {
-  id              String    @id @default(uuid())
-  postId          String
-  authorId        String
-  parentCommentId String?
-  body            String
-  path            String
-  depth           Int       @default(0)
-  score           Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-  author          User      @relation(fields: [authorId], references: [id])
-  parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
-  replies         Comment[] @relation("CommentReplies")
-  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  reports         Report[]
-  votes           Vote[]
+  id            String         @id @default(uuid())
+  body          String
+  postId        String
+  authorId      String
+  parentId      String?
+  score         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  author        User           @relation(fields: [authorId], references: [id])
+  parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
+  replies       Comment[]      @relation("CommentReplies")
+  post          Post           @relation(fields: [postId], references: [id])
+  notifications Notification[]
+  reports       Report[]
+  votes         Vote[]
 
   @@index([postId])
+  @@index([parentId])
   @@index([authorId])
 }
 
@@ -146,34 +150,56 @@ model Vote {
 }
 
 model Report {
-  id          String       @id @default(uuid())
-  reporterId  String
-  postId      String?
-  commentId   String?
-  reason      String
-  description String?
-  status      ReportStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  comment     Comment?     @relation(fields: [commentId], references: [id])
-  post        Post?        @relation(fields: [postId], references: [id])
-  reporter    User         @relation(fields: [reporterId], references: [id])
+  id           String       @id @default(uuid())
+
+  reporterId   String
+
+  reportedUserId String?
+
+  postId       String?
+  commentId    String?
+
+  reason       ReportReason
+
+  description  String?
+
+  status       ReportStatus @default(PENDING)
+
+  createdAt    DateTime     @default(now())
+
+  reporter      User @relation("ReportReporter", fields: [reporterId], references: [id])
+
+  reportedUser  User? @relation("ReportedUser", fields: [reportedUserId], references: [id])
+
+  post          Post? @relation(fields: [postId], references: [id])
+
+  comment       Comment? @relation(fields: [commentId], references: [id])
 
   @@index([reporterId])
+  @@index([reportedUserId])
   @@index([postId])
   @@index([commentId])
 }
 
 model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String?
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String           @id @default(uuid())
+  recipientId String
+  actorId     String?
+  postId      String?
+  commentId   String?
+  type        NotificationType
+  title       String
+  message     String?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  actor       User?            @relation("NotificationActor", fields: [actorId], references: [id])
+  comment     Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  post        Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  recipient   User             @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
-  @@index([userId, isRead])
+  @@index([recipientId, isRead])
+  @@index([postId])
+  @@index([commentId])
 }
 
 model WatchHistory {
@@ -212,6 +238,15 @@ enum PostType {
 enum VoteType {
   UPVOTE
   DOWNVOTE
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  MISINFORMATION
+  NSFW
+  OTHER
 }
 
 enum ReportStatus {

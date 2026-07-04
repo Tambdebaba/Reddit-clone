@@ -3,11 +3,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { Prisma } from '@prisma/client'; // ⚡ Required to catch Prisma error types
-import { randomUUID } from 'crypto';
+import { randomUUID,randomBytes, createHash } from 'crypto';
 import { UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { randomBytes, createHash} from 'crypto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 @Injectable()
 export class AuthService {
@@ -57,7 +56,7 @@ export class AuthService {
     }
 
     private async generateRefreshToken(userId: string) {
-      const refreshToken = randomBytes(64).toString('hex');
+      const refreshToken = randomBytes(64).toString('hex');      
     
       const tokenHash = createHash('sha256')
         .update(refreshToken)
@@ -100,7 +99,6 @@ export class AuthService {
         user.id,
         user.email,
       );
-      
       const refreshToken = await this.generateRefreshToken(user.id); 
       return { accessToken, refreshToken, };
     }
@@ -110,7 +108,6 @@ export class AuthService {
       const tokenHash = createHash('sha256')
         .update(refreshTokenDto.refreshToken)
         .digest('hex');
-    
       const session =
         await this.prisma.refreshToken.findUnique({
           where: {
@@ -120,47 +117,41 @@ export class AuthService {
             user: true,
           },
         });
-    
       if (!session) {
         throw new UnauthorizedException(
           'Invalid refresh token',
         );
       }
-    
       if (session.expiresAt < new Date()) {
         await this.prisma.refreshToken.delete({
           where: {
             id: session.id,
           },
         });
-    
         throw new UnauthorizedException(
           'Refresh token expired',
         );
       }
-    
       await this.prisma.refreshToken.delete({
         where: {
           id: session.id,
         },
       });
-    
       const accessToken =
         await this.generateAccessToken(
           session.user.id,
           session.user.email,
         );
-    
       const newRefreshToken =
         await this.generateRefreshToken(
           session.user.id,
-        );
-    
+        );   
       return {
         accessToken,
         refreshToken: newRefreshToken,
       };
     }
+    
     async logout(refreshTokenDto: RefreshTokenDto,){
       const tokenHash = createHash('sha256')
         .update(refreshTokenDto.refreshToken)
